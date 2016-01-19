@@ -1,0 +1,83 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link rel="stylesheet" type="text/css" href="Css/tplayer.css" />
+    <link rel="stylesheet" type="text/css" href="Plugins/FontAwesome4.1/css/font-awesome.min.css" />
+	<script src="Js/jquery.js"></script>
+    <script src="Js/jquery-ui.js"></script>
+    <script src="Js/tPlayer.js"></script>
+</head>
+<body>
+    <div id="t_wrapper">
+        <div id="t_cover">
+        	<img src="Images/logo.png">
+        </div>
+    	<div id="t_top">
+    		<div id="t_title_info">
+    			<span class="artist"></span>
+    			<span class="title"></span>
+    		</div>
+    	</div>
+    	<div id="t_middle">
+    		<div id="play"></div>
+    		<div id="pause" class="hidden">
+    		</div>
+    		<div class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all" id="t_progress">
+                <div id="trackInfo">
+                    <div id="error">
+    				</div>
+                    <div id="current">0:00</div>
+                    <div id="duration">0:00</div>
+    			</div>
+    			<div style="width: 0%;" class="ui-slider-range ui-widget-header ui-corner-all ui-slider-range-min"></div>
+            	<span style="left: 0%;" class="ui-slider-handle ui-state-default ui-corner-all" tabindex="0"></span>
+            </div>
+    		<span id="prev"></span>
+            <span id="next"></span>
+    	</div>
+    	<div id="t_bottom">
+            <div id="range">
+                <div id="val"></div>
+                <div id="vol"></div>
+                <div id="rangeVal"></div>
+            </div>
+            <div id="t_pls_show" class="noselectpls"></div>
+    	</div>
+    </div>
+    <div id="playlist">
+        <ul>
+            <li t_cover="Mondo_b.jpg" t_artist="Joe_Strummer" t_name="Mondo_Bongo" class="">
+            	<a href="#">Joe_Strummer_Mondo_Bongo</a>
+            	<audio preload="none">
+                    <source src="Media/Joe_Strummer_Mondo_Bongo.mp3" type="audio/mp3">
+                    <source src="Media/Transformers2.htm" type="audio/ogg; codecs=vorbis">
+            	</audio>
+            </li>
+            <li t_cover="M5_swbl.png" t_artist="Maroon 5" t_name="She Will Be Loved" class="">
+            	<a href="#">Maroon 5 - She Will Be Loved</a>
+                <audio preload="none">
+                    <source src="Media/Maroon 5 - She Will Be Loved.mp3" type="audio/mp3">
+                    <source src="Media/Transformers2.htm" type="audio/ogg; codecs=vorbis">
+                </audio>
+            </li>
+            <li t_cover="GREEN_DAY.png" t_artist="Green Day" t_name="Boulevard Of Broken Dreams">
+            	<a href="#">Green Day - Boulevard Of Broken Dreams</a>
+                <audio preload="none">
+                    <source src="Media/Green Day - Boulevard Of Broken Dreams.mp3" type="audio/mp3">
+                    <source src="Media/Transformers2.htm" type="audio/ogg; codecs=vorbis">
+                </audio>
+            </li>
+            <li t_cover="birdy.jpg" t_artist="Michael Learns To Rock" t_name="That's Why">
+            	<a href="#">Michael Learns To Rock - That's Why</a>
+                <audio preload="none">
+                    <source src="Media/Michael Learns To Rock - That's Why.mp3" type="audio/mp3">
+                    <source src="Media/Transformers2.htm" type="audio/ogg; codecs=vorbis">
+                </audio>
+            </li>
+        </ul>
+    </div>
+
+</body>
+</html>
