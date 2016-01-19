@@ -510,7 +510,7 @@ class PMA_DisplayResults
             // 2.3 Other statements (ie "SELECT" ones) -> updates
             //     $displayParts['edit_lnk'], $displayParts['del_lnk'] and
             //     $displayParts['text_btn'] (keeps other default values)
-            $prev_table = $fields_meta[0]->table;
+            $prev_table = '';
             $displayParts['text_btn']  = (string) '1';
 
             for ($i = 0; $i < $this->__get('fields_cnt'); $i++) {
@@ -522,8 +522,9 @@ class PMA_DisplayResults
 
                 // 2.3.2 Displays edit/delete/sort/insert links?
                 if ($is_link
-                    && (($fields_meta[$i]->table == '')
-                    || ($fields_meta[$i]->table != $prev_table))
+                    && $prev_table != ''
+                    && $fields_meta[$i]->table != ''
+                    && $fields_meta[$i]->table != $prev_table
                 ) {
                     // don't display links
                     $displayParts['edit_lnk'] = self::NO_EDIT_OR_DELETE;
@@ -541,7 +542,9 @@ class PMA_DisplayResults
 
                 // 2.3.3 Always display print view link
                 $displayParts['pview_lnk']    = (string) '1';
-                $prev_table = $fields_meta[$i]->table;
+                if ($fields_meta[$i]->table != '') {
+                    $prev_table = $fields_meta[$i]->table;
+                }
 
             } // end for
         } // end if..elseif...else (2.1 -> 2.3)
@@ -732,10 +735,11 @@ class PMA_DisplayResults
 
                 $table_navigation_html .= '<td>';
                 $_url_params = array(
-                    'db'        => $this->__get('db'),
-                    'table'     => $this->__get('table'),
-                    'sql_query' => $this->__get('sql_query'),
-                    'goto'      => $this->__get('goto'),
+                    'db'                 => $this->__get('db'),
+                    'table'              => $this->__get('table'),
+                    'sql_query'          => $this->__get('sql_query'),
+                    'goto'               => $this->__get('goto'),
+                    'is_browse_distinct' => $this->__get('is_browse_distinct'),
                 );
 
                 //<form> to keep the form alignment of button < and <<
@@ -1873,17 +1877,19 @@ class PMA_DisplayResults
         }
 
         $_single_url_params = array(
-            'db'                => $this->__get('db'),
-            'table'             => $this->__get('table'),
-            'sql_query'         => $single_sorted_sql_query,
-            'session_max_rows'  => $session_max_rows
+            'db'                 => $this->__get('db'),
+            'table'              => $this->__get('table'),
+            'sql_query'          => $single_sorted_sql_query,
+            'session_max_rows'   => $session_max_rows,
+            'is_browse_distinct' => $this->__get('is_browse_distinct'),
         );
 
         $_multi_url_params = array(
-            'db'                => $this->__get('db'),
-            'table'             => $this->__get('table'),
-            'sql_query'         => $multi_sorted_sql_query,
-            'session_max_rows'  => $session_max_rows
+            'db'                 => $this->__get('db'),
+            'table'              => $this->__get('table'),
+            'sql_query'          => $multi_sorted_sql_query,
+            'session_max_rows'   => $session_max_rows,
+            'is_browse_distinct' => $this->__get('is_browse_distinct'),
         );
         $single_order_url  = 'sql.php' . PMA_URL_getCommon($_single_url_params);
         $multi_order_url = 'sql.php' . PMA_URL_getCommon($_multi_url_params);
@@ -2414,7 +2420,8 @@ class PMA_DisplayResults
     private function _buildNullDisplay($class, $condition_field, $meta, $align = '')
     {
         // the null class is needed for grid editing
-        return '<td ' . $align . ' data-decimals="' . $meta->decimals
+        $decimals = isset($meta->decimals) ? $meta->decimals : '-1';
+        return '<td ' . $align . ' data-decimals="' . $decimals
             . '" data-type="' . $meta->type . '"  class="'
             . $this->_addClass(
                 $class, $condition_field, $meta, ''
@@ -2492,7 +2499,7 @@ class PMA_DisplayResults
         }
 
         $mime_map = $this->__get('mime_map');
-        $orgFullColName = $meta->db . '.' . $meta->orgtable . '.' . $meta->orgname;
+        $orgFullColName = $this->__get('db') . '.' . $meta->orgtable . '.' . $meta->orgname;
         if ($transformation_plugin != $default_function
             || !empty($mime_map[$orgFullColName]['input_transformation'])
         ) {
@@ -2691,7 +2698,9 @@ class PMA_DisplayResults
             } // end if (1)
 
             // 2. Displays the rows' values
-            $this->_setMimeMap();
+            if (is_null($this->__get('mime_map'))) {
+                $this->_setMimeMap();
+            }
             $table_body_html .= $this->_getRowValues(
                 $dt_result, $row, $row_no, $col_order, $map,
                 $grid_edit_class, $col_visib, $where_clause,
@@ -2738,7 +2747,7 @@ class PMA_DisplayResults
                 ++$currentColumn) {
 
             $meta = $fields_meta[$currentColumn];
-            $orgFullTableName = $meta->db . '.' . $meta->orgtable;
+            $orgFullTableName = $this->__get('db') . '.' . $meta->orgtable;
 
             if ($GLOBALS['cfgRelation']['commwork']
                 && $GLOBALS['cfgRelation']['mimework']
@@ -2747,7 +2756,7 @@ class PMA_DisplayResults
                 && empty($added[$orgFullTableName])
             ) {
                 $mimeMap = array_merge(
-                    $mimeMap, PMA_getMIME($meta->db, $meta->orgtable, false, true)
+                    $mimeMap, PMA_getMIME($this->__get('db'), $meta->orgtable, false, true)
                 );
                 $added[$orgFullTableName] = true;
             }
@@ -2830,8 +2839,11 @@ class PMA_DisplayResults
 
         $row_info = $this->_getRowInfoForSpecialLinks($row, $col_order);
 
+        $uniqueConditionMap = array();
+
+        $columnCount = $this->__get('fields_cnt');
         for ($currentColumn = 0;
-                $currentColumn < $this->__get('fields_cnt');
+                $currentColumn < $columnCount;
                 ++$currentColumn) {
 
             // assign $i with appropriate column order
@@ -2839,13 +2851,14 @@ class PMA_DisplayResults
 
             $meta    = $fields_meta[$i];
             $orgFullColName
-                = $meta->db . '.' . $meta->orgtable . '.' . $meta->orgname;
+                = $this->__get('db') . '.' . $meta->orgtable . '.' . $meta->orgname;
 
             $not_null_class = $meta->not_null ? 'not_null' : '';
             $relation_class = isset($map[$meta->name]) ? 'relation' : '';
             $hide_class = ($col_visib && ! $col_visib[$currentColumn])
                 ? 'hide'
                 : '';
+            $grid_edit = $meta->orgtable != '' ? $grid_edit_class : '';
 
             // handle datetime-related class, for grid editing
             $field_type_class
@@ -2854,7 +2867,7 @@ class PMA_DisplayResults
             $is_field_truncated = false;
             // combine all the classes applicable to this column's value
             $class = $this->_getClassesForColumn(
-                $grid_edit_class, $not_null_class, $relation_class,
+                $grid_edit, $not_null_class, $relation_class,
                 $hide_class, $field_type_class
             );
 
@@ -2913,7 +2926,7 @@ class PMA_DisplayResults
 
             // Check whether the field needs to display with syntax highlighting
 
-            $dbLower = /*overload*/mb_strtolower($meta->db);
+            $dbLower = /*overload*/mb_strtolower($this->__get('db'));
             $tblLower = /*overload*/mb_strtolower($meta->orgtable);
             $nameLower = /*overload*/mb_strtolower($meta->orgname);
             if (! empty($this->transformation_info[$dbLower][$tblLower][$nameLower])
@@ -2973,19 +2986,29 @@ class PMA_DisplayResults
                 'transform_key' => $meta->name,
             );
 
-            $unique_conditions = PMA_Util::getUniqueCondition(
-                $dt_result,
-                $this->__get('fields_cnt'),
-                $this->__get('fields_meta'),
-                $row,
-                false,
-                $meta->orgtable
-            );
+            /*
+             * The result set can have columns from more than one table,
+             * this is why we have to check for the unique conditions
+             * related to this table; however getUniqueCondition() is
+             * costly and does not need to be called if we already know
+             * the conditions for the current table.
+             */
+            if (! isset($uniqueConditionMap[$meta->orgtable])) {
+                $unique_conditions = PMA_Util::getUniqueCondition(
+                    $dt_result,
+                    $this->__get('fields_cnt'),
+                    $this->__get('fields_meta'),
+                    $row,
+                    false,
+                    $meta->orgtable
+                );
+                $uniqueConditionMap[$meta->orgtable] = $unique_conditions;
+            }
 
             $transform_url_params = array(
-                'db'            => $meta->db,
+                'db'            => $this->__get('db'),
                 'table'         => $meta->orgtable,
-                'where_clause'  => $unique_conditions[0],
+                'where_clause'  => $uniqueConditionMap[$meta->orgtable][0],
                 'transform_key' => $meta->orgname
             );
 
@@ -4702,7 +4725,7 @@ class PMA_DisplayResults
 
         $links_html .= PMA_Util::getButtonOrImage(
             'submit_mult', 'mult_submit', 'submit_mult_change',
-            __('Change'), 'b_edit.png', 'edit'
+            __('Edit'), 'b_edit.png', 'edit'
         );
 
         $links_html .= PMA_Util::getButtonOrImage(
@@ -5149,7 +5172,10 @@ class PMA_DisplayResults
         }
 
         /* Create link to download */
-        if (count($url_params) > 0) {
+
+        // in PHP < 5.5, empty() only checks variables
+        $tmpdb = $this->__get('db');
+        if ((count($url_params) > 0) && (! empty($tmpdb) && ! empty($meta->orgtable))) {
             $result = '<a href="tbl_get_field.php'
                 . PMA_URL_getCommon($url_params)
                 . '" class="disableAjax">'
@@ -5199,7 +5225,8 @@ class PMA_DisplayResults
 
         $relational_display = $_SESSION['tmpval']['relational_display'];
         $printview = $this->__get('printview');
-        $result = '<td data-decimals="' . $meta->decimals . '" data-type="'
+        $decimals = isset($meta->decimals) ? $meta->decimals : '-1';
+        $result = '<td data-decimals="' . $decimals . '" data-type="'
             . $meta->type . '" class="'
             . $this->_addClass(
                 $class, $condition_field, $meta, $nowrap,
@@ -5526,7 +5553,7 @@ class PMA_DisplayResults
             $ajax = PMA_Response::getInstance()->isAjax() ? ' ajax' : '';
             $ret .= 'center" ' . ' >'
                . PMA_Util::linkOrButton(
-                   $del_url, $del_str, array('class' => 'delete_row' . $ajax), false
+                   $del_url, $del_str, array('class' => 'delete_row requireConfirm' . $ajax), false
                )
                . '<div class="hide">' . $js_conf . '</div>'
                . '</td>';

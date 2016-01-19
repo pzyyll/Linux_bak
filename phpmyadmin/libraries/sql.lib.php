@@ -159,16 +159,19 @@ function PMA_getColumnNameInColumnDropSql($sql)
 function PMA_resultSetHasJustOneTable($fields_meta)
 {
     $just_one_table = true;
-    $prev_table = $fields_meta[0]->table;
+    $prev_table = '';
     foreach ($fields_meta as $one_field_meta) {
-        if (! empty($one_field_meta->table)
+        if ($one_field_meta->table != ''
+            && $prev_table != ''
             && $one_field_meta->table != $prev_table
         ) {
             $just_one_table = false;
-            break;
+        }
+        if ($one_field_meta->table != '') {
+            $prev_table = $one_field_meta->table;
         }
     }
-    return $just_one_table;
+    return $just_one_table && $prev_table != '';
 }
 
 /**
@@ -417,7 +420,7 @@ function PMA_analyzeAndGetTableHtmlForProfilingResults(
     foreach ($profiling_results as $one_result) {
         if (isset($profiling_stats['states'][ucwords($one_result['Status'])])) {
             $states = $profiling_stats['states'];
-            $states[ucwords($one_result['Status'])]['time']
+            $states[ucwords($one_result['Status'])]['total_time']
                 += $one_result['Duration'];
             $states[ucwords($one_result['Status'])]['calls']++;
         } else {

@@ -155,14 +155,18 @@ AJAX.registerOnload('sql.js', function () {
         var $link = $(this);
         $link.PMA_confirm(question, $link.attr('href'), function (url) {
             $msgbox = PMA_ajaxShowMessage();
-            $.get(url, {'ajax_request': true, 'is_js_confirmed': true}, function (data) {
-                if (data.success) {
-                    PMA_ajaxShowMessage(data.message);
-                    $link.closest('tr').remove();
-                } else {
-                    PMA_ajaxShowMessage(data.error, false);
-                }
-            });
+            if ($link.hasClass('formLinkSubmit')) {
+                submitFormLink($link);
+            } else {
+                $.get(url, {'ajax_request': true, 'is_js_confirmed': true}, function (data) {
+                    if (data.success) {
+                        PMA_ajaxShowMessage(data.message);
+                        $link.closest('tr').remove();
+                    } else {
+                        PMA_ajaxShowMessage(data.error, false);
+                    }
+                });
+            }
         });
     });
 
@@ -472,6 +476,7 @@ AJAX.registerOnload('sql.js', function () {
         function submitShowAllForm() {
             var submitData = $form.serialize() + '&ajax_request=true&ajax_page_request=true';
             PMA_ajaxShowMessage();
+            AJAX.source = $form;
             $.post($form.attr('action'), submitData, AJAX.responseHandler);
         }
     });
@@ -570,7 +575,7 @@ AJAX.registerOnload('sql.js', function () {
         var $form = $button.parent('form');
         var submitData = $form.serialize() + '&ajax_request=true&ajax_page_request=true&submit_mult=' + $button.val();
         PMA_ajaxShowMessage();
-        $.get($form.attr('action'), submitData, AJAX.responseHandler);
+        $.post($form.attr('action'), submitData, AJAX.responseHandler);
     });
 }); // end $()
 
